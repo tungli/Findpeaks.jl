@@ -1,2 +1,2 @@
-# Findpeaks
+# Findpeaks.jl
 Contains `findpeaks` function. 

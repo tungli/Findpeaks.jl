@@ -1,1 +1,2 @@
 # Findpeaks
+Contains `findpeaks` function. 

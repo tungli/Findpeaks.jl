@@ -52,4 +52,33 @@ function findpeaks(y::Array{T},
                 break
             end
         end
+        mr = minimum(y[p:rP])
+        ref = max(mr,ml)
+        prominence[i] = yP[i] - ref
+    end
+
+    #minimal prominence refinement
+    peaks = peaks[prominence .> minProm]
+
+    #minimal height refinement
+    peaks = peaks[y[peaks] .> minHeight]
+    yP = y[peaks]
+
+    #minimal distance refinement
+    peaks2del = zeros(Bool,length(peaks))
+    inds = sortperm(y[peaks],rev=true)
+    permute!(peaks,inds)
+    for i = 1:length(peaks)
+        for j = 1:(i-1)
+            if abs(x[peaks[i]] - x[peaks[j]]) <= minDist
+                if !peaks2del[j]
+                    peaks2del[i] = true
+                end
+            end
+        end
+    end
+
+    peaks[.!peaks2del]
+end
+
 end # module

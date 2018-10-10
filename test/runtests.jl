@@ -1,8 +1,8 @@
 using Findpeaks
-using Base.Test
+using Test
 
 gaussian(x,μ,σ) = 1/sqrt(2*π)/σ*exp(-((x-μ)^2)/2/σ^2)
-x = collect(linspace(1,1000,1000))
+x = collect(range(1,stop=1000,length=1000))
 μ = rand(x)
 data = gaussian.(x,μ,rand(x)/3)
 

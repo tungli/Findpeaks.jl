@@ -25,7 +25,7 @@ function findpeaks(
                    x :: AbstractVector{S} = collect(1:length(y))
                    ;
                    min_height :: T = minimum(y),
-                   min_prom :: T = minimum(y),
+                   min_prom :: T = zero(y[1]),
                    min_dist :: S = zero(x[1]),
                    threshold :: T = zero(y[1]),
                   ) where {T <: Real, S}

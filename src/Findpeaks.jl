@@ -5,8 +5,8 @@ export findpeaks
 """
 `findpeaks(y::Array{T},
 x::Array{S}=collect(1:length(y))
-;minHeight::T=minimum(y), minProm::T=minimum(y),
-minDist::S=0, threshold::T=0 ) where {T<:Real,S}`\n
+;min_height::T=minimum(y), min_prom::T=minimum(y),
+min_dist::S=0, threshold::T=0 ) where {T<:Real,S}`\n
 Returns indices of local maxima (sorted from highest peaks to lowest)
 in 1D array of real numbers. Similar to MATLAB's findpeaks().\n
 *Arguments*:\n
@@ -14,30 +14,84 @@ in 1D array of real numbers. Similar to MATLAB's findpeaks().\n
 *Optional*:\n
 `x` -- x-data\n
 *Keyword*:\n
-`minHeight` -- minimal peak height\n
-`minProm` -- minimal peak prominence\n
-`minDist` -- minimal peak distance (keeping highest peaks)\n
+`min_height` -- minimal peak height\n
+`min_prom` -- minimal peak prominence\n
+`min_dist` -- minimal peak distance (keeping highest peaks)\n
 `threshold` -- minimal difference (absolute value) between
  peak and neighboring points\n
 """
-function findpeaks(y::Array{T},
-    x::Array{S}=collect(1:length(y))
-    ;minHeight::T=minimum(y), minProm::T=minimum(y),
-    minDist::S=zero(x[1]), threshold::T=zero(y[1]) ) where {T<:Real,S}
+function findpeaks(
+                   y :: AbstractVector{T},
+                   x :: AbstractVector{S} = collect(1:length(y))
+                   ;
+                   min_height :: T = minimum(y),
+                   min_prom :: T = minimum(y),
+                   min_dist :: S = zero(x[1]),
+                   threshold :: T = zero(y[1]),
+                  ) where {T <: Real, S}
 
-    peaks = Array{Int64,1}()
     dy = diff(y)
-    #differences inside threshold
-    for i = 2:length(dy)
-        if dy[i] <= -threshold && dy[i-1] >= threshold
-            push!(peaks,i)
+
+    peaks = in_threshold(dy, threshold)
+
+    yP = y[peaks]
+    peaks = with_prominence(y, peaks, min_prom)
+    
+    #minimal height refinement
+    peaks = peaks[y[peaks] .> min_height]
+    yP = y[peaks]
+
+    peaks = with_distance(peaks, x, y, min_dist)
+
+    peaks
+end
+
+"""
+Select peaks that are inside threshold.
+"""
+function in_threshold(
+                      dy :: AbstractVector{T},
+                      threshold :: T,
+                     ) where {T <: Real}
+
+    peaks = 1:length(dy)
+
+    if !iszero(threshold)
+        k = 0
+        for i = 2:length(dy)
+            if dy[i] <= -threshold && dy[i-1] >= threshold
+                k += 1
+                peaks[k] = i
+            end
         end
+        peaks = peaks[1:k]
     end
 
-    #calculate prominences
+    peaks
+end
+
+"""
+Select peaks that have a given prominence
+"""
+function with_prominence(
+                         y :: AbstractVector{T},
+                         peaks :: AbstractVector{Int},
+                         min_prom::T,
+                        ) where {T <: Real}
+
+    #minimal prominence refinement
+    peaks[prominence(y, peaks) .> min_prom]
+end
+
+
+"""
+Calculate peaks' prominences
+"""
+function prominence(y::AbstractVector{T}, peaks::AbstractVector{Int}) where {T <: Real}
     yP = y[peaks]
-    prominence = zeros(Float64,length(yP))
-    for (i,p) in enumerate(peaks)
+    proms = zero(yP)
+
+    for (i, p) in enumerate(peaks)
         lP, rP = 1, length(y)
         for j = (i-1):-1:1
             if yP[j] > yP[i]
@@ -54,23 +108,28 @@ function findpeaks(y::Array{T},
         end
         mr = minimum(y[p:rP])
         ref = max(mr,ml)
-        prominence[i] = yP[i] - ref
+        proms[i] = yP[i] - ref
     end
 
-    #minimal prominence refinement
-    peaks = peaks[prominence .> minProm]
+    proms
+end
 
-    #minimal height refinement
-    peaks = peaks[y[peaks] .> minHeight]
-    yP = y[peaks]
+"""
+Select only peaks that are further apart than `min_dist`
+"""
+function with_distance(
+                       peaks :: AbstractVector{Int},
+                       x :: AbstractVector{S},
+                       y :: AbstractVector{T},
+                       min_dist::S,
+                      ) where {T <: Real, S}
 
-    #minimal distance refinement
-    peaks2del = zeros(Bool,length(peaks))
-    inds = sortperm(y[peaks],rev=true)
-    permute!(peaks,inds)
+    peaks2del = zeros(Bool, length(peaks))
+    inds = sortperm(y[peaks], rev=true)
+    permute!(peaks, inds)
     for i = 1:length(peaks)
         for j = 1:(i-1)
-            if abs(x[peaks[i]] - x[peaks[j]]) <= minDist
+            if abs(x[peaks[i]] - x[peaks[j]]) <= min_dist
                 if !peaks2del[j]
                     peaks2del[i] = true
                 end
@@ -80,5 +139,6 @@ function findpeaks(y::Array{T},
 
     peaks[.!peaks2del]
 end
+
 
 end # module

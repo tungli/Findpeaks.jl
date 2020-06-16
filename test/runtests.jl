@@ -41,3 +41,34 @@ end
     @test abs(peaks[1] - expected_peak_1) < 20
     @test abs(peaks[2] - expected_peak_2) < 20
 end
+
+@testset "Threshold" begin
+    y = [0., 1., 3., 1., 4., 5., 3., 0., 2., 5., 4., 0.]
+    
+    @test Set(findpeaks(y, threshold=3.1)) == Set([])
+    @test Set(findpeaks(y, threshold=2.1)) == Set([])
+    @test Set(findpeaks(y, threshold=1.1)) == Set([3])
+    @test Set(findpeaks(y, threshold=0.1)) == Set([3, 6, 10])
+    @test Set(findpeaks(y, threshold=0.0)) == Set([3, 6, 10])
+end
+
+@testset "Min. Distance" begin
+    y = [0., 1., 3., 1., 4., 5., 3., 0., 2., 5., 4., 0.]
+    
+    @test Set(findpeaks(y, min_dist=4)) == Set([6])
+    @test Set(findpeaks(y, min_dist=3)) == Set([6, 10])
+    @test Set(findpeaks(y, min_dist=2)) == Set([3, 6, 10])
+    @test Set(findpeaks(y, min_dist=0)) == Set([3, 6, 10])
+    @test Set(findpeaks(y, min_dist=0)) == Set([3, 6, 10])
+end
+
+@testset "Min. Height" begin
+    y = [0., 1., 3., 1., 4., 5., 3., 0., 2., 5., 4., 0.]
+    
+    @test Set(findpeaks(y, min_height=6.)) == Set([])
+    @test Set(findpeaks(y, min_height=4.9)) == Set([6, 10])
+    @test Set(findpeaks(y, min_height=2.9)) == Set([3, 6, 10])
+end
+
+
+

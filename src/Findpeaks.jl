@@ -54,20 +54,16 @@ function in_threshold(
                       threshold :: T,
                      ) where {T <: Real}
 
-    peaks = 1:length(dy)
+    peaks = 1:length(dy) |> collect
 
-    if !iszero(threshold)
-        k = 0
-        for i = 2:length(dy)
-            if dy[i] <= -threshold && dy[i-1] >= threshold
-                k += 1
-                peaks[k] = i
-            end
+    k = 0
+    for i = 2:length(dy)
+        if dy[i] <= -threshold && dy[i-1] >= threshold
+            k += 1
+            peaks[k] = i
         end
-        peaks = peaks[1:k]
     end
-
-    peaks
+    peaks[1:k]
 end
 
 """
